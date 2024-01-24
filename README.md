@@ -14,7 +14,7 @@ python run.py --env simple --num_runs 32
 ```
 Here, `simple` is the synthetic environment. 
 Change it to `cartpole` to get the inverted pendulum. 
-Input `32` is the number of trials to run, where all the performance is logged and saved into the provided `/logs` directory.
+Input `32` is the number of trials to run, where all the performance is logged and saved into the `/logs` directory (make sure this exists before running).
 
 The algorithm already contains the tuned parameters. 
 However, if you want to modify it, you can finetune with
