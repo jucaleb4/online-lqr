@@ -4,9 +4,8 @@ import numpy.linalg as la
 from lqr import lqr_env
 
 def setup_simple_env(seed):
-    """ Borrwed from 'Sampling Complexity of ... '
-    by Horia, Tu, and Recht.
-    
+    """ Borrwed from 'On the sample complexity of the linear quadratic regulator'
+    by Dean, Mania, Matni, Recht, and Tu.
     """
     n = k = 3
     A = np.array([
@@ -36,7 +35,6 @@ def setup_cartpole_env(seed):
     Inverted Pendulum' by Jezierski, Mozaryn, and Suski.
     We scale the system dynamic matrices A,B by a factor of 0.8 to ensure
     stability.
-    
     """
     A = np.array([
         [1., 0.0099, 2e-5, 9e-8],
