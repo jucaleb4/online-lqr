@@ -21,20 +21,23 @@ def npg(K_0, env, params, logger):
     rho = env.get_spectrum(K)
     logger.log(0, K, label="npg", rho=rho)
     for t in range(1, 1+params["po_total_iters"]):
+
         (J_K, E_K, p) = pe.policy_eval(K, env, params, logger) 
-        (_, E_K_star) = pe.exact_policy_eval(K, env) 
-        # pe.exact_policy_eval(K, env) 
 
         K = K - 2*eta * E_K
+        print(f"Estimated cost J(K)={J_K}")
 
+        # (_, E_K_star) = pe.exact_policy_eval(K, env) 
         # print(f"E_K=\n{E_K}\nE_K_star=\n{E_K_star}\n===================")
 
-        print(f"Estimated cost J(K)={J_K}")
         rho = env.get_spectrum(K)
         logger.log(t, K, label="npg", rho=rho)
 
-        params["D"] = min(max(0.5, la.norm(p)), params["D"])
+        if params.get("dynamic_D", False):
+            params["D"] = min(max(1, la.norm(p)), params["D"])
+            # params["D"] = params["D"] * t/(t+1.)
+        # print(f"D={params['D']}")
+
         params["minibatch"] = min(params["minibatch"]+1, 30)
-        print(f"D={params['D']}")
 
     return K

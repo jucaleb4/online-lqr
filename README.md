@@ -4,16 +4,16 @@ An actor-critic approach to solving LQR with only a single trajectory.
 ## How to run
 The code requires minimal installation, e.g., NumPy, SciPy, and argparse. To quickstart:
 ```
-python run.py 
+python run.py --dynamic
 ```
-which runs the simple (i.e., synthetic) environment once.
+which runs the simple (i.e., synthetic) environment once with dynamic diameter (for best performance).
 
 For a more specific experimental setup, you can pass in arguments:
 ```
-python run.py --env simple --num_runs 32
+python run.py --env simple --num_runs 32 --dynamic
 ```
 Here, `simple` is the synthetic environment. 
-Change it to `cartpole` to get the inverted pendulum. 
+Change it to `boeing` to run the control of the longitudinal dynamics of a Boeing 747 aircraft (remove the `dynamic` flag for optimal performance).
 Input `32` is the number of trials to run, where all the performance is logged and saved into the `/logs` directory (make sure this exists before running).
 
 The algorithm already contains the tuned parameters. 

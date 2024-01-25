@@ -58,16 +58,17 @@ def tune_po_simple_env(setup_env):
 
     tune.tune_lqr_policy_opt(env, K_0, params)
 
-def po_experiment(K_0, env, fname=None):
+def po_experiment(K_0, env, fname=None, args={}):
     """ Runs simple environment """
 
     params = dict({
-        "po_eta": 0.05,
-        "po_total_iters": 30,
-        "eta": 10, 
+        "po_eta": vargs["po_eta"],
+        "po_total_iters": vargs["po_total_iters"],
+        "eta": 10, # 10
         "lambda": 50, 
         "tau": 5, 
-        "D": 20, 
+        "D": 20 if args.get("dynamic", False) else 10, # allow slightly larger diameter initially if we dynamically decrease
+        "dynamic_D": args.get("dynamic", False),
         "total_iters": 100, 
         "total_epochs": 2,
         "vr": True,
@@ -78,19 +79,19 @@ def po_experiment(K_0, env, fname=None):
     po.npg(K_0, env, params, logger)
     logger.save()
 
-def run_po_experiments(setup_env, num_runs, env_name):
+def run_po_experiments(setup_env, num_runs, env_name, args):
     # TEMP
     for seed in range(1000, 1000+num_runs):
         s_time = time.time()
         fname = os.path.join("logs", f"{env_name}_env_seed={seed}.csv")
         (env, K_0) = setup_env(seed=seed)
-        po_experiment(K_0, env, fname)
+        po_experiment(K_0, env, fname, args)
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--env", 
-                        choices=["simple", "cartpole"], 
+                        choices=["simple", "cartpole", "boeing"], 
                         default="simple",
                         help="Which environment to run on")
     parser.add_argument("--tune", 
@@ -101,16 +102,29 @@ if __name__ == "__main__":
                         type=int, 
                         default=1, 
                         help="Number of experiments to run (ignored if fine tuning)")
+    parser.add_argument("--dynamic", 
+                        action="store_true",
+                        help="Dynamic updates the diameter")
 
     args = parser.parse_args()
+    vargs = vars(args)
 
     setup_env = lambda : (None, None)
     if args.env == "simple":
+        vargs["po_eta"] = 0.05
+        vargs["po_total_iters"] = 30
         setup_env = example_envs.setup_simple_env
         env_name = "simple"
-    else:
+    elif args.env == "cartpole":
+        vargs["po_eta"] = 0.05
+        vargs["po_total_iters"] = 30
         setup_env = example_envs.setup_cartpole_env
         env_name = "cartpole"
+    else:
+        vargs["po_eta"] = 0.00025
+        vargs["po_total_iters"] = 60
+        setup_env = example_envs.setup_boeing_env
+        env_name = "boeing"
 
     if args.tune == "stepsize":
         tune_stepsize_simple_env(setup_env)
@@ -119,4 +133,4 @@ if __name__ == "__main__":
     elif args.tune == "po_stepsize":
         tune_po_simple_env(setup_env)
     else:
-        run_po_experiments(setup_env, args.num_runs, env_name=env_name)
+        run_po_experiments(setup_env, args.num_runs, env_name=env_name, args=vargs)

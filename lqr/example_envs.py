@@ -27,43 +27,10 @@ def setup_simple_env(seed):
     #     [0.00123005, 0.01197829, 0.04458641]
     # ])
 
-    print(f"Initial spectrum: {la.norm(A-B@K_0, ord=2)}")
+    print(f"Initial spectrum: {env.get_spectrum(K_0)}")
     return (env, K_0)
 
 def setup_cartpole_env(seed):
-    """ Borrowed from 'A Comparison of LQR and MPC Control Algorithms of an
-    Inverted Pendulum' by Jezierski, Mozaryn, and Suski.
-    We scale the system dynamic matrices A,B by a factor of 0.8 to ensure
-    stability.
-    """
-    A = np.array([
-        [0, 0, -1, 0, 0]
-        [0, -0.003, 0.039, 0, -0.322],
-        [0,-0.065,-0.319, 7.74, 0],
-        [0, 0.020,-0.101,-0.429, 0],
-        [0,0,0,1,0]
-    ])
-    B = np.array([
-        [0,0],
-        [0.01,1],
-        [-0.18,-0.04],
-        [-1.16,0.598],
-        [0,0]
-    ])
-    (n,k) = B.shape
-    Q = np.eye(n)
-    R = np.eye(k)
-    U = np.eye(n)
-    Cov = U.T@U
-    sigma = 1
-
-    K_0 = np.array([[1,1,1,1]])
-    env = lqr_env.LQREnv(A, B, Q, R, Cov, sigma, seed=seed)
-
-    print(f"Initial spectrum: {la.norm(A-B@K_0, ord=2)}")
-    return (env, K_0)
-
-def old_setup_cartpole_env(seed):
     """ Borrowed from 'A Comparison of LQR and MPC Control Algorithms of an
     Inverted Pendulum' by Jezierski, Mozaryn, and Suski.
     We scale the system dynamic matrices A,B by a factor of 0.8 to ensure
@@ -87,5 +54,50 @@ def old_setup_cartpole_env(seed):
     K_0 = np.array([[1,1,1,1]])
     env = lqr_env.LQREnv(A, B, Q, R, Cov, sigma, seed=seed)
 
-    print(f"Initial spectrum: {la.norm(A-B@K_0, ord=2)}")
+    print(f"Initial spectrum: {env.get_spectrum(K_0)}")
+    return (env, K_0)
+
+def setup_boeing_env(seed):
+    """ Control of Boeing 747 """
+    A = np.array([
+        [0, 0, -1, 0, 0],
+        [0, -0.003, 0.039, 0, -0.322],
+        [0,-0.065,-0.319, 7.74, 0],
+        [0, 0.020,-0.101,-0.429, 0],
+        [0,0,0,1,0],
+    ])
+    B = np.array([
+        [0,0],
+        [0.01,1],
+        [-0.18,-0.04],
+        [-1.16,0.598],
+        [0,0],
+    ])
+
+    A = np.array([
+        [1,-1.1267,-0.6528,-8.0749, 1.5890],
+        [0, 0.7741, 0.3176,-0.9772,-2.9690],
+        [0, 0.1157, 0.0201,-0.0005,-0.3628],
+        [0, 0.0111, 0.0033,-0.0349,-0.0447],
+        [0, 0.1388,-0.0862, 0.2935, 0.7579],
+    ])
+    print(f"rho(A)={np.abs(la.eig(A)[0])}")
+    B = np.array([
+        [89.1973,-50.1685, 1.1267,-19.3472],
+        [ 5.2231,  6.3614, 0.2259, -0.3176],
+        [-9.4731,  5.9294,-0.1157,  0.9799],
+        [-0.3236,  0.3178,-0.0111, -0.0033],
+        [-4.5318,  3.2146,-0.1388,  0.0862],
+    ])
+
+    (n,k) = B.shape
+    Q = np.eye(n)
+    R = np.eye(k)
+    Cov = 0.1 * np.eye(n)
+    sigma = 1
+
+    K_0 = 0.005*np.ones(shape=(k,n))
+    env = lqr_env.LQREnv(A, B, Q, R, Cov, sigma, seed=seed)
+    
+    print(f"Initial spectrum: {env.get_spectrum(K_0)}")
     return (env, K_0)
