@@ -93,7 +93,15 @@ def setup_boeing_env(seed):
     (n,k) = B.shape
     Q = np.eye(n)
     R = np.eye(k)
-    Cov = 0.1 * np.eye(n)
+    # Cov = 0.1 * np.eye(n)
+    U = np.array([
+        [1, -0.01, 0.5, -0.5, -0.5],
+        [0, 1, 0.1, -0.01, -0.01],
+        [0, 0, 1, -0.5, -0.5],
+        [0, 0, 0, 1, 0.5],
+        [0,0,0,0,1]
+    ])
+    Cov = U@U.T
     sigma = 1
 
     K_0 = 0.005*np.ones(shape=(k,n))
