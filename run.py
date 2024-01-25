@@ -127,7 +127,7 @@ if __name__ == "__main__":
         env_name = "cartpole"
     else:
         vargs["po_eta"] = 0.00025
-        vargs["po_total_iters"] = 60
+        vargs["po_total_iters"] = 120
         setup_env = example_envs.setup_boeing_env
         env_name = "boeing"
 
