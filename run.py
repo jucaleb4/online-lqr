@@ -81,7 +81,8 @@ def po_experiment(K_0, env, fname=None, args={}):
 
 def run_po_experiments(setup_env, num_runs, env_name, args):
     # TEMP
-    for seed in range(1000, 1000+num_runs):
+    seed_0 = args.get("seed", 1000)
+    for seed in range(seed_0, seed_0+num_runs):
         s_time = time.time()
         fname = os.path.join("logs", f"{env_name}_env_seed={seed}.csv")
         (env, K_0) = setup_env(seed=seed)
@@ -105,6 +106,10 @@ if __name__ == "__main__":
     parser.add_argument("--dynamic", 
                         action="store_true",
                         help="Dynamic updates the diameter")
+    parser.add_argument("--seed", 
+                        type=int, 
+                        default=0, 
+                        help="Seed counter")
 
     args = parser.parse_args()
     vargs = vars(args)
