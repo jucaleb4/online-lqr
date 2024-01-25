@@ -37,6 +37,39 @@ def setup_cartpole_env(seed):
     stability.
     """
     A = np.array([
+        [0, 0, -1, 0, 0]
+        [0, -0.003, 0.039, 0, -0.322],
+        [0,-0.065,-0.319, 7.74, 0],
+        [0, 0.020,-0.101,-0.429, 0],
+        [0,0,0,1,0]
+    ])
+    B = np.array([
+        [0,0],
+        [0.01,1],
+        [-0.18,-0.04],
+        [-1.16,0.598],
+        [0,0]
+    ])
+    (n,k) = B.shape
+    Q = np.eye(n)
+    R = np.eye(k)
+    U = np.eye(n)
+    Cov = U.T@U
+    sigma = 1
+
+    K_0 = np.array([[1,1,1,1]])
+    env = lqr_env.LQREnv(A, B, Q, R, Cov, sigma, seed=seed)
+
+    print(f"Initial spectrum: {la.norm(A-B@K_0, ord=2)}")
+    return (env, K_0)
+
+def old_setup_cartpole_env(seed):
+    """ Borrowed from 'A Comparison of LQR and MPC Control Algorithms of an
+    Inverted Pendulum' by Jezierski, Mozaryn, and Suski.
+    We scale the system dynamic matrices A,B by a factor of 0.8 to ensure
+    stability.
+    """
+    A = np.array([
         [1., 0.0099, 2e-5, 9e-8],
         [0, 0.9840, 0.0052, 2e-5],
         [0, -0.0002, 1.0011, 0.0100],

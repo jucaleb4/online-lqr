@@ -22,10 +22,9 @@ def exact_policy_eval(K: np.ndarray, env):
     P_K = spla.solve_discrete_lyapunov((A-B@K).T, Q+K.T@R@K)
     Cov2 = Cov + sigma**2 * B@B.T
     J_K = np.trace(P_K@Cov2)
-    rho = la.norm(A-B@K, ord=2)
+    rho = np.max(np.abs(la.eig(A-B@K)[0]))
     if rho >= 1:
-        logging.debug("Given unstable matrix gain")
-        J_K = np.inf
+        logging.debug(f"Given unstable matrix gain with rho={rho}")
 
     T_22 = R + B.T@P_K@B
     T_21 = B.T@P_K@A

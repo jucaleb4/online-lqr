@@ -66,7 +66,7 @@ class LQREnv():
         return (x_next, cost)
 
     def get_spectrum(self, K):
-        return la.norm(self.A - self.B@K, ord=2)
+        return np.max(np.abs(la.eig(self.A-self.B@K)[0]))
 
     def _step(self, K):
         """ Simulates a step in the environment.
