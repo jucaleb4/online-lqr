@@ -28,6 +28,8 @@ This process is noisy and still rudimentary, so make sure to run multiple trials
 ## Code structure
 For those who want to play with the optimization or models, head to the `/lqr` folder.
 
+The main file `run.py` is the place we input the tuning parameters.
+
 Codes pertaining to algorithms can be found in `po.py` (policy optimization) and `pe.py` (policy evaluation).
 
 Examples of our model can be found in `example_envs.py`, which calls `lqr_envs.py` under the hood.
