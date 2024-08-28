@@ -93,6 +93,7 @@ def po_experiment(K_0, env, fname=None, args={}):
             "total_epochs": total_epochs,
             "vr": True,
             "minibatch": 10,
+            "silent": args.get("parallel", False),
         })
         po.npg(K_0, env, params, logger)
     else:
@@ -103,6 +104,7 @@ def po_experiment(K_0, env, fname=None, args={}):
             "beta_0": args["po_beta"],
             "log_n_iter": pe_total_iters,
             "total_iters": total_iters, 
+            "silent": args.get("parallel", False),
         })
         po.tts_actor_critic(K_0, env, params, logger)
     logger.save()
@@ -124,11 +126,11 @@ def run_po_experiments(setup_env, num_runs, env_name, args):
             run_worker_po_experiment(seed)
         return
     
-    num_cpu = mp.cpu_count()
-    print("Parallel PO experiements with %d workers" % (num_cpu-1))
+    num_workers = min(num_runs, mp.cpu_count()-1)
+    print("Parallel PO experiements with %d workers" % num_workers)
     worker_queue = []
     for seed in range(seed_0, seed_0+num_runs):
-        if len(worker_queue) == num_cpu-1:
+        if len(worker_queue) == num_workers:
             # wait for all workers to finish
             for p in worker_queue:
                 p.join()
@@ -136,6 +138,11 @@ def run_po_experiments(setup_env, num_runs, env_name, args):
         p = mp.Process(target=run_worker_po_experiment, args=(seed,))
         p.start()
         worker_queue.append(p)
+
+    # cleanup
+    for p in worker_queue:
+        p.join()
+    worker_queue = []
 
 if __name__ == "__main__":
 

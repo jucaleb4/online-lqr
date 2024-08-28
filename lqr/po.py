@@ -26,8 +26,6 @@ def npg(K_0, env, params, logger):
         (J_K, E_K, p) = pe.policy_eval(K, env, params, logger) 
 
         K = K - 2*eta * E_K
-        if not params["silent"]:
-            print(f"Estimated cost J(K)={J_K}")
 
         # (_, E_K_star) = pe.exact_policy_eval(K, env) 
         # print(f"E_K=\n{E_K}\nE_K_star=\n{E_K_star}\n===================")
