@@ -30,7 +30,7 @@ class TestLogger(Logger):
             logging.debug(f"[{t}]: res={la.norm(self.A@x-self.b): .2e} x={x}, x*={self.x_sol}")
 
 class SimpleRunLogger(Logger):
-    def __init__(self, env, fname=None):
+    def __init__(self, env, fname=None, silent=False):
         super().__init__()
         self.env = env
         self.J_star = env.get_optimal_val()
@@ -41,6 +41,7 @@ class SimpleRunLogger(Logger):
         self.Jgap_arr = np.zeros(32, dtype=float)
         self.J_arr = np.zeros(32, dtype=float)
         self.rho_arr = np.zeros(32, dtype=float)
+        self.silent = silent
 
         print("SimpleRunLogger turning logging on")
         logging.basicConfig(level=logging.DEBUG)
@@ -49,10 +50,11 @@ class SimpleRunLogger(Logger):
         if label=="npg":
             from lqr import pe
             # TODO: Get rid of pe
-            (J_K, _) = pe.exact_policy_eval(K, self.env)
+            (J_K, _, _) = pe.exact_policy_eval(K, self.env)
             num_samples = self.env.num_samples
 
-            logging.debug(f"[{t}]: J(K)-J*={J_K-self.J_star}, J(K)={J_K}, num_samples={num_samples}")
+            if not self.silent:
+                logging.debug(f"[{t}]: J(K)-J*={J_K-self.J_star}, J(K)={J_K}, num_samples={num_samples}")
 
             t = self.num_logs
             self.sample_arr[t] = num_samples

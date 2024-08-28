@@ -11,6 +11,7 @@ from lqr import po
 from lqr import lqr_logger
 from lqr import example_envs
 
+import multiprocessing as mp
 
 def tune_stepsize_simple_env(setup_env):
     """
@@ -61,32 +62,80 @@ def tune_po_simple_env(setup_env):
 def po_experiment(K_0, env, fname=None, args={}):
     """ Runs simple environment """
 
-    params = dict({
-        "po_eta": vargs["po_eta"],
-        "po_total_iters": vargs["po_total_iters"],
-        "eta": 10, # 10
-        "lambda": 50, 
-        "tau": 5, 
-        "D": 20 if args.get("dynamic", False) else 10, # allow slightly larger diameter initially if we dynamically decrease
-        "dynamic_D": args.get("dynamic", False),
-        "total_iters": 100, 
-        "total_epochs": 2,
-        "vr": True,
-        "minibatch": 10,
-    })
+    # whether to use our implemented NPG
+    use_npg = True
 
-    logger = lqr_logger.SimpleRunLogger(env, fname)
-    po.npg(K_0, env, params, logger)
+    if args["alg"] == "npg":
+        total_iters = 300
+        total_epochs = 1
+    elif args["alg"] == "npg_rst":
+        total_iters = 100
+        total_epochs = 2
+    elif args["alg"] == "tts_ac":
+        pe_total_iters = 30000
+        total_iters = pe_total_iters*args["po_total_iters"]
+        use_npg = False
+    else:
+        print("Unknown alg=%s" % args["alg"])
+        return 
+
+    logger = lqr_logger.SimpleRunLogger(env, fname, silent=args.get("parallel", False))
+    if use_npg:
+        params = dict({
+            "po_eta": vargs["po_eta"],
+            "po_total_iters": vargs["po_total_iters"],
+            "eta": 10, # 10
+            "lambda": 50, 
+            "tau": 5, 
+            "D": 20 if args.get("dynamic", False) else 10, # allow slightly larger diameter initially if we dynamically decrease
+            "dynamic_D": args.get("dynamic", False),
+            "total_iters": total_iters, 
+            "total_epochs": total_epochs,
+            "vr": True,
+            "minibatch": 10,
+        })
+        po.npg(K_0, env, params, logger)
+    else:
+        params = dict( {
+            "a_power": args["a_power"],
+            "b_power": args["b_power"], 
+            "alpha_0": args["po_alpha"],
+            "beta_0": args["po_beta"],
+            "log_n_iter": pe_total_iters,
+            "total_iters": total_iters, 
+        })
+        po.tts_actor_critic(K_0, env, params, logger)
     logger.save()
 
 def run_po_experiments(setup_env, num_runs, env_name, args):
-    # TEMP
     seed_0 = args.get("seed", 1000)
-    for seed in range(seed_0, seed_0+num_runs):
-        s_time = time.time()
-        fname = os.path.join("logs", f"{env_name}_env_seed={seed}.csv")
+    alg = args['alg']
+    folder = os.path.join("logs", "%s_%s" % (alg, env_name))
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+
+    def run_worker_po_experiment(seed):
+        fname = os.path.join(folder, f"alg={alg}_{env_name}_env_seed={seed}.csv")
         (env, K_0) = setup_env(seed=seed)
         po_experiment(K_0, env, fname, args)
+
+    if not args["parallel"]:
+        for seed in range(seed_0, seed_0+num_runs):
+            run_worker_po_experiment(seed)
+        return
+    
+    num_cpu = mp.cpu_count()
+    print("Parallel PO experiements with %d workers" % (num_cpu-1))
+    worker_queue = []
+    for seed in range(seed_0, seed_0+num_runs):
+        if len(worker_queue) == num_cpu-1:
+            # wait for all workers to finish
+            for p in worker_queue:
+                p.join()
+            worker_queue = []
+        p = mp.Process(target=run_worker_po_experiment, args=(seed,))
+        p.start()
+        worker_queue.append(p)
 
 if __name__ == "__main__":
 
@@ -96,7 +145,7 @@ if __name__ == "__main__":
                         default="simple",
                         help="Which environment to run on")
     parser.add_argument("--tune", 
-                        choices=["none", "stepsize", "iter", "po_stepsize"], 
+                        choices=["none", "stepsize", "iter", "po_stepsize", "tts_ac"], 
                         default="none",
                         help="Which tuning mode. If none specified, runs experiment")
     parser.add_argument("--num_runs", 
@@ -106,17 +155,31 @@ if __name__ == "__main__":
     parser.add_argument("--dynamic", 
                         action="store_true",
                         help="Dynamic updates the diameter")
+    parser.add_argument("--alg", 
+                        choices=["npg", "npg_rst", "tts_ac"],
+                        default="npg_rst", 
+                        help="Algorithm")
     parser.add_argument("--seed", 
                         type=int, 
                         default=0, 
                         help="Seed counter")
+    parser.add_argument("--parallel", 
+                        action="store_true",
+                        help="Use multiprocessing")
 
     args = parser.parse_args()
     vargs = vars(args)
 
+
     setup_env = lambda : (None, None)
     if args.env == "simple":
+        # npg
         vargs["po_eta"] = 0.05
+        # two-time scale (see theorem 2 from https://arxiv.org/pdf/2109.14756#page=14)
+        vargs["a_power"] = 1
+        vargs["b_power"] = 2./3
+        vargs["po_alpha"] = 1e-1
+        vargs["po_beta"] = 1e-4
         vargs["po_total_iters"] = 30
         setup_env = example_envs.setup_simple_env
         env_name = "simple"
@@ -126,7 +189,13 @@ if __name__ == "__main__":
         setup_env = example_envs.setup_cartpole_env
         env_name = "cartpole"
     else:
+        # npg
         vargs["po_eta"] = 0.00025
+        # two-time scale
+        vargs["a_power"] = 1
+        vargs["b_power"] = 2./3
+        vargs["po_alpha"] = 1e-10
+        vargs["po_beta"] = 1e-10 # 1e-9
         vargs["po_total_iters"] = 120
         setup_env = example_envs.setup_boeing_env
         env_name = "boeing"
@@ -137,5 +206,7 @@ if __name__ == "__main__":
         tune_iters_simple_env(setup_env)
     elif args.tune == "po_stepsize":
         tune_po_simple_env(setup_env)
+    elif args.tune == "tts_ac":
+        tune.tune_tts_ac(setup_env)
     else:
         run_po_experiments(setup_env, args.num_runs, env_name=env_name, args=vargs)

@@ -167,10 +167,7 @@ def tune_lqr_policy_opt(env, K_0, params):
             avg_cost = (1.-theta)*avg_cost + theta*cost
         return avg_cost
 
-    rranges = [
-        [0.01, 0.1, 1., 10, 100], # po_eta
-        [10],                     # po_total_iters
-    ]
+    po_total_iters = 10
 
     logger = lqr_logger.Logger()
     best_J_K = float("inf")
@@ -192,3 +189,34 @@ def tune_lqr_policy_opt(env, K_0, params):
             mark = ""
 
         print(f"J_K={J_K:.4e} (po_eta={po_eta}, po_total_iters={po_total_iters}) {mark}")
+
+def tune_tts_ac(setup_env):
+    """
+    Tunes two-time scale actor-critic method (https://arxiv.org/pdf/2109.14756)
+    """
+    params = dict({"total_iters": 3000})
+    logger = lqr_logger.Logger()
+
+    rranges = [
+        [10.**p for p in range(-12, 0)], # alpha_0
+        [10.**p for p in range(-12, 0)], # beta_0
+    ]
+    params["a_power"] = 1
+    params["b_power"] = 2./3
+    best_J_K = float("inf")
+
+    for tuned_param in itertools.product(*rranges):
+        (env, K_0) = setup_env(seed=30)
+        (alpha_0, beta_0) = tuned_param
+        curr_params = dict({"alpha_0": alpha_0, "beta_0": beta_0})
+        params.update(curr_params)
+        K = po.tts_actor_critic(K_0, env, params, logger)
+        if np.all(np.isfinite(K)) and la.norm(K) < 1e10:
+            (J_K, _, rho) = pe.exact_policy_eval(K, env)
+            if rho >= 1:
+                J_K = float("inf")
+        else:
+            J_K = float("inf")
+        print("J(K)=%.4e (alpha_0=%.2e beta_0=%.2e)%s" % (J_K, alpha_0, beta_0, " <-- ***" if J_K < best_J_K else ""))
+        if J_K < best_J_K:
+            best_J_K = J_K

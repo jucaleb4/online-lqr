@@ -30,7 +30,7 @@ def exact_policy_eval(K: np.ndarray, env):
     T_21 = B.T@P_K@A
     E_K = T_22@K- T_21
 
-    return (J_K, E_K)
+    return (J_K, E_K, rho)
 
 def policy_eval_params_checker(params):
     assert params.__contains__("tau"), "Missing mixing time"
