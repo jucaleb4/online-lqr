@@ -25,7 +25,10 @@ def npg(K_0, env, params, logger):
 
         (J_K, E_K, p) = pe.policy_eval(K, env, params, logger) 
 
-        K = K - 2*eta * E_K
+        new_K = K - 2*eta * E_K
+
+        if np.all(np.isfinite(new_K)) and la.norm(new_K) < 1e8:
+            K = new_K
 
         # (_, E_K_star) = pe.exact_policy_eval(K, env) 
         # print(f"E_K=\n{E_K}\nE_K_star=\n{E_K_star}\n===================")

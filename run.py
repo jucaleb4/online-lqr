@@ -148,7 +148,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--env", 
-                        choices=["simple", "cartpole", "boeing"], 
+                        choices=["simple", "large_simple", "cartpole", "boeing"], 
                         default="simple",
                         help="Which environment to run on")
     parser.add_argument("--tune", 
@@ -190,6 +190,17 @@ if __name__ == "__main__":
         vargs["po_total_iters"] = 30
         setup_env = example_envs.setup_simple_env
         env_name = "simple"
+    elif args.env == "large_simple":
+        # npg
+        vargs["po_eta"] = 0.025
+        # two-time scale (see theorem 2 from https://arxiv.org/pdf/2109.14756#page=14)
+        vargs["a_power"] = 1
+        vargs["b_power"] = 2./3
+        vargs["po_alpha"] = 5e-2
+        vargs["po_beta"] = 5e-5
+        vargs["po_total_iters"] = 30
+        setup_env = example_envs.setup_large_simple_env
+        env_name = "large_simple"
     elif args.env == "cartpole":
         vargs["po_eta"] = 0.05
         vargs["po_total_iters"] = 30

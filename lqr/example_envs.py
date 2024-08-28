@@ -1,5 +1,6 @@
 import numpy as np
 import numpy.linalg as la
+import scipy.linalg as scla
 
 from lqr import lqr_env
 
@@ -13,6 +14,30 @@ def setup_simple_env(seed):
         [0.01, 1.01, 0.01],
         [0.00, 0.01, 1.01],
     ])
+    B = np.eye(k)
+    Q = 1e-3 * np.eye(n)
+    R = np.eye(k)
+    Cov = np.eye(n)
+    sigma = 1
+
+    env = lqr_env.LQREnv(A, B, Q, R, Cov, sigma, seed=seed)
+    K_0 = np.eye(k)
+    # K_0 = np.array([
+    #     [0.04458641, 0.01197829, 0.00123005],
+    #     [0.01197829, 0.04581646, 0.01197829],
+    #     [0.00123005, 0.01197829, 0.04458641]
+    # ])
+
+    print(f"Initial spectrum: {env.get_spectrum(K_0)}")
+    return (env, K_0)
+
+def setup_large_simple_env(seed):
+    """ Borrwed from 'On the sample complexity of the linear quadratic regulator'
+    by Dean, Mania, Matni, Recht, and Tu.
+    """
+    n = k = 10 
+    col = np.append([1.01, 0.01], np.zeros(n-2))
+    A = scla.toeplitz(col, col)
     B = np.eye(k)
     Q = 1e-3 * np.eye(n)
     R = np.eye(k)
