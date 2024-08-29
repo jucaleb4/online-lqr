@@ -126,8 +126,10 @@ def run_po_experiments(setup_env, num_runs, env_name, args):
             run_worker_po_experiment(seed)
         return
     
-    num_workers = min(num_runs, mp.cpu_count()-1)
-    print("Parallel PO experiements with %d workers" % num_workers)
+    num_workers = min(num_runs, len(os.sched_getaffinity(0))-1)
+
+    print("Parallel PO experiements with %d workers (%d jobs, %d max cpu)" % (num_workers, num_runs, mp.cpu_count()))
+    s_time = time.time()
     worker_queue = []
     for seed in range(seed_0, seed_0+num_runs):
         if len(worker_queue) == num_workers:
@@ -142,7 +144,8 @@ def run_po_experiments(setup_env, num_runs, env_name, args):
     # cleanup
     for p in worker_queue:
         p.join()
-    worker_queue = []
+
+    print("Total time: %.2fs" % (time.time() - s_time))
 
 if __name__ == "__main__":
 
