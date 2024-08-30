@@ -28,10 +28,16 @@ def setup_simple_env(seed):
     #     [0.00123005, 0.01197829, 0.04458641]
     # ])
 
-    print(f"Initial spectrum: {env.get_spectrum(K_0)}")
+    # print(f"Initial spectrum: {env.get_spectrum(K_0)}")
     return (env, K_0)
 
+def setup_medium_simple_env(seed):
+    return _setup_simple_env(seed, 10)
+
 def setup_large_simple_env(seed):
+    return _setup_simple_env(seed, 100)
+
+def _setup_simple_env(seed, n):
     """ Borrwed from 'On the sample complexity of the linear quadratic regulator'
     by Dean, Mania, Matni, Recht, and Tu.
     """
@@ -52,7 +58,7 @@ def setup_large_simple_env(seed):
     #     [0.00123005, 0.01197829, 0.04458641]
     # ])
 
-    print(f"Initial spectrum: {env.get_spectrum(K_0)}")
+    # print(f"Initial spectrum: {env.get_spectrum(K_0)}")
     return (env, K_0)
 
 def setup_cartpole_env(seed):
@@ -79,7 +85,7 @@ def setup_cartpole_env(seed):
     K_0 = np.array([[1,1,1,1]])
     env = lqr_env.LQREnv(A, B, Q, R, Cov, sigma, seed=seed)
 
-    print(f"Initial spectrum: {env.get_spectrum(K_0)}")
+    # print(f"Initial spectrum: {env.get_spectrum(K_0)}")
     return (env, K_0)
 
 def setup_boeing_env(seed):
@@ -106,7 +112,7 @@ def setup_boeing_env(seed):
         [0, 0.0111, 0.0033,-0.0349,-0.0447],
         [0, 0.1388,-0.0862, 0.2935, 0.7579],
     ])
-    print(f"rho(A)={np.abs(la.eig(A)[0])}")
+    # print(f"rho(A)={np.abs(la.eig(A)[0])}")
     B = np.array([
         [89.1973,-50.1685, 1.1267,-19.3472],
         [ 5.2231,  6.3614, 0.2259, -0.3176],
@@ -132,5 +138,5 @@ def setup_boeing_env(seed):
     K_0 = 0.005*np.ones(shape=(k,n))
     env = lqr_env.LQREnv(A, B, Q, R, Cov, sigma, seed=seed)
     
-    print(f"Initial spectrum: {env.get_spectrum(K_0)}")
+    # print(f"Initial spectrum: {env.get_spectrum(K_0)}")
     return (env, K_0)

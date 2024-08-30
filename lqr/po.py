@@ -59,6 +59,8 @@ def tts_actor_critic(K_0, env, params, logger):
     a = params['a_power'] # 1 or 3./5
     b = params['b_power'] # 2./3 or 2./5
 
+    consecutive_unstable_iters = 0
+
     for k in range(params["total_iters"]):
 
         alpha_k = params['alpha_0']/((k+1)**a)
@@ -81,6 +83,14 @@ def tts_actor_critic(K_0, env, params, logger):
         # Log every n_log steps
         if "log_n_iter" in params and (k % params["log_n_iter"] == 0):
             t = int(k/params["log_n_iter"])
+            rho = env.get_spectrum(K)
+            if rho >= 1:
+                consecutive_unstable_iters += 1
+            else:
+                consecutive_unstable_iters = 0
             logger.log(t, K, label="npg", rho=env.get_spectrum(K))
+
+        if consecutive_unstable_iters == 10:
+            break
 
     return K

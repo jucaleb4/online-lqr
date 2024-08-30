@@ -102,7 +102,7 @@ def po_experiment(K_0, env, fname=None, args={}):
             "b_power": args["b_power"], 
             "alpha_0": args["po_alpha"],
             "beta_0": args["po_beta"],
-            "log_n_iter": pe_total_iters,
+            "log_n_iter": 100,
             "total_iters": total_iters, 
             "silent": args.get("parallel", False),
         })
@@ -151,7 +151,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--env", 
-                        choices=["simple", "large_simple", "cartpole", "boeing"], 
+                        choices=["simple", "medium_simple", "large_simple", "cartpole", "boeing"], 
                         default="simple",
                         help="Which environment to run on")
     parser.add_argument("--tune", 
@@ -188,19 +188,30 @@ if __name__ == "__main__":
         # two-time scale (see theorem 2 from https://arxiv.org/pdf/2109.14756#page=14)
         vargs["a_power"] = 1
         vargs["b_power"] = 2./3
-        vargs["po_alpha"] = 1e-1
+        vargs["po_alpha"] = 1e2
         vargs["po_beta"] = 1e-4
         vargs["po_total_iters"] = 30
         setup_env = example_envs.setup_simple_env
         env_name = "simple"
+    elif args.env == "medium_simple":
+        # npg
+        vargs["po_eta"] = 0.025
+        # two-time scale (see theorem 2 from https://arxiv.org/pdf/2109.14756#page=14)
+        vargs["a_power"] = 1
+        vargs["b_power"] = 2./3
+        vargs["po_alpha"] = 1e1
+        vargs["po_beta"] = 1e-4
+        vargs["po_total_iters"] = 30
+        setup_env = example_envs.setup_medium_simple_env
+        env_name = "medium_simple"
     elif args.env == "large_simple":
         # npg
         vargs["po_eta"] = 0.025
         # two-time scale (see theorem 2 from https://arxiv.org/pdf/2109.14756#page=14)
         vargs["a_power"] = 1
         vargs["b_power"] = 2./3
-        vargs["po_alpha"] = 5e-2
-        vargs["po_beta"] = 5e-5
+        vargs["po_alpha"] = 1e1
+        vargs["po_beta"] = 1e-4
         vargs["po_total_iters"] = 30
         setup_env = example_envs.setup_large_simple_env
         env_name = "large_simple"
@@ -215,8 +226,8 @@ if __name__ == "__main__":
         # two-time scale
         vargs["a_power"] = 1
         vargs["b_power"] = 2./3
-        vargs["po_alpha"] = 1e-10
-        vargs["po_beta"] = 1e-10 # 1e-9
+        vargs["po_alpha"] = 1e1 # 1e-10
+        vargs["po_beta"] = 1e3 # 1e-10 
         vargs["po_total_iters"] = 120
         setup_env = example_envs.setup_boeing_env
         env_name = "boeing"

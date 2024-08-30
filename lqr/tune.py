@@ -194,12 +194,12 @@ def tune_tts_ac(setup_env):
     """
     Tunes two-time scale actor-critic method (https://arxiv.org/pdf/2109.14756)
     """
-    params = dict({"total_iters": 3000})
+    params = dict({"total_iters": 2000})
     logger = lqr_logger.Logger()
 
     rranges = [
-        [10.**p for p in range(-12, 0)], # alpha_0
-        [10.**p for p in range(-12, 0)], # beta_0
+        [10.**p for p in range(-10, 4)], # alpha_0
+        [10.**p for p in range(-10, 4)], # beta_0
     ]
     params["a_power"] = 1
     params["b_power"] = 2./3
