@@ -1,29 +1,65 @@
 # online-lqr
 An actor-critic approach to solving LQR with only a single trajectory.
 
+## Requirements
+You will need NumPy, SciPy, and argparse. You may also need matplotlib for plotting.
+
 ## How to run
-The code requires minimal installation, e.g., NumPy, SciPy, and argparse. To quickstart:
-```
-python run.py --dynamic
-```
-which runs the simple (i.e., synthetic) environment once with dynamic diameter (for best performance).
 
-For a more specific experimental setup, you can pass in arguments:
-```
-python run.py --env simple --num_runs 32 --dynamic --seed 1000
-```
-Here, `simple` is the synthetic environment. 
-Change it to `boeing` to run the control of the longitudinal dynamics of a Boeing 747 aircraft (remove the `dynamic` flag for optimal performance).
-Input `32` is the number of trials to run, where all the performance is logged and saved into the `/logs` directory (make sure this exists before running). In our experiments, we start with seed 1000 (i.e., `--seed 1000`) since we used smaller seeds for tuning and wanted to avoid overfitting to the seed.
+## TLDR
+If you want to recreate the all the results from the paper, *first* create a folder called `logs`, which is where the code saves the progress.
 
-The algorithm already contains the tuned parameters. 
-However, if you want to modify it, you can finetune with
+Then, you can run the following scripts:
 ```
-python run.py --env simple --tune stepsize
+python run.py --env simple --num_runs 32 --dynamic --seed 1000 --alg npg_rst
+python run.py --env simple --num_runs 32 --dynamic --seed 1000 --alg npg
+python run.py --env simple --num_runs 32 --dynamic --seed 1000 --alg tts_ac
+
+python run.py --env large_simple --num_runs 32 --dynamic --seed 1000 --alg npg_rst
+python run.py --env large_simple --num_runs 32 --dynamic --seed 1000 --alg npg
+python run.py --env large_simple --num_runs 32 --dynamic --seed 1000 --alg tts_ac
+
+python run.py --env boeing --num_runs 32 --seed 1000 --alg npg_rst
+python run.py --env boeing --num_runs 32 --seed 1000 --alg npg
+python run.py --env boeing --num_runs 32 --seed 1000 --alg tts_ac
 ```
-which tunes the critic's stepsize parameters. 
-You can also tune the critic's `iter` as well as the actor's `po_stepsize`.
-This process is noisy and still rudimentary, so make sure to run multiple trials and make a judgement yourself.
+We will provide more details about the arguments in the "More detail" section below.
+
+The code will run 32 trials of the experiements starting with seed=1000 using the three algorithms:
+- npg_rst: NPG with restart (i.e., multi-epoch).
+- npg: NPG with only a single epoch
+- tts_ac: Two-time scale actor-critic ([link](https://epubs.siam.org/doi/abs/10.1137/22M150277X))
+
+Our code can also run each experiement in parallel. Just add a `--parallel` flag, i.e., 
+```
+python run.py --env simple --num_runs 32 --dynamic --seed 1000 --alg npg_rst --parallel
+```
+
+## How to parse
+After running all nine scripts above, you can print the results by
+```
+plot_240829.py
+```
+Make sure to update the `root` variable inside the file.
+
+The file will output a file `all_perfs.png`. 
+
+## More details
+You may notice we only use flag `--dynamic` for both simple environments (but not Boeing). 
+When tuning the algorithm, we found the performance of policy evaluation for the two environments was sensitive to the diameter of the feasible region, `D_0`.
+If it was too large, progress would be slow, while if it was too small, then the optimal solution may not be found.
+To mitigate this, the `--dynamic` flag dynamically sets `D_0` to the norm of the solution from the previous call of policy evaluation.
+
+We have code for tuning, but unfortunately it was made ad-hoc and not well-structured, so we will not provide extensive documentation for it. 
+If you still want to play around, you can try:
+```
+python run.py --tune <tune_setting>
+```
+where `tune_setting` can either be:
+- stepsize (tunes policy evaluation's stepsize) 
+- iter (tunes number of iterations and epochs for policy evaluation)
+- po_stepsize (tunes policy optimizaiton's stepsize)
+- tts_ac (tunes stepsize for two-time scale actor-critic)
 
 ## Code structure
 For those who want to play with the optimization or models, head to the `/lqr` folder.
