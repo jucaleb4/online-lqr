@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 
 from parse import get_alg_perfs
 
+# https://stackoverflow.com/questions/42142144/displaying-first-decimal-digit-in-scientific-notation-in-matplotlib
+from matplotlib.ticker import ScalarFormatter
+
 def plot_lqr_comparison_experiments(env, log_folder, ylog=False, sname=None):
     """
     """
@@ -100,6 +103,16 @@ def plot_lqr_comparison_experiments(env, log_folder, ylog=False, sname=None):
         plt.savefig(sname, dpi=240)
     plt.close()
 
+def str_to_sci(x):
+    p = np.log(x)/np.log(10)
+    if x < 1:
+        p-=1
+    p = int(p)
+    a = x/(10**p)
+    b = x/(10**(p-1)) % 10
+    s = "%d.%de%d" % (a,b,p)
+    return s
+
 def plot_all_lqr_comparison_experiments(env_arr, log_folder, ylog=False, sname=None):
     """
     """
@@ -116,6 +129,7 @@ def plot_all_lqr_comparison_experiments(env_arr, log_folder, ylog=False, sname=N
 
     for z, env in enumerate(env_arr):
         ax = axes[z]
+        ax.ticklabel_format(axis='both', style='sci', scilimits=(0,0))
 
         min_val = np.inf
         max_val = 0
@@ -178,7 +192,7 @@ def plot_all_lqr_comparison_experiments(env_arr, log_folder, ylog=False, sname=N
             print("Median perf of %s on %s achieved J(K_T)=%.2e (J_star=%.2e)" % (method, env, J_T_median, J_star))
 
             u = np.argmax(Jgap_median)
-            ax.plot(xs, Jgap_median, color=colors[i], linestyle=lss[i], label="%s (%.2e)" % (method_name[i], J_T_median))
+            ax.plot(xs, Jgap_median, color=colors[i], linestyle=lss[i], label="%s (%s)" % (method_name[i], str_to_sci(J_T_median)))
             ax.fill_between(
                 xs, 
                 np.maximum(1e-16, Jgap_mean-1.95*Jgap_std) if ylog else Jgap_mean-Jgap_std, 
@@ -206,8 +220,40 @@ def plot_all_lqr_comparison_experiments(env_arr, log_folder, ylog=False, sname=N
         ax.set_yticks([], minor=True)
 
         yticks = np.exp(np.linspace(np.log(0.5*min_val), np.log(max_val), num=4, endpoint=True))
-        ax.set_yticks(yticks, labels=["%.1e" % ytick for ytick in yticks])
+        ax.set_yticks(yticks, labels=[str_to_sci(ytick) for ytick in yticks])
 
+        # zoom-in (npg-ac and first two environments)
+        if i == 2 and z <= 1:
+            x1, x2, y1, y2 = 99,100,-100,-99  # subregion of the original image
+            axins = ax.inset_axes(
+                [0.125, 0.075, 0.25, 0.35],
+                # xlim=(x1, x2), ylim=(y1, y2), 
+                xticklabels=[], yticklabels=[])
+            # print(axins.get_xlim())
+            # print(axins.get_ylim())
+            # axins.imshow(Z2, extent=extent, origin="lower")
+
+            axins.plot(xs, Jgap_median, color=colors[i], linestyle=lss[i])
+            axins.fill_between(
+                xs, 
+                Jgap_mean-1.95*Jgap_std if ylog else Jgap_mean-Jgap_std, 
+                Jgap_mean+1.95*Jgap_std, 
+                color=colors[i], 
+                alpha=0.25
+            )
+            axins.set_yscale('log')
+            axins.set_yticks([])
+            axins.set_yticks([], minor=True)
+            axins.set_yticks(yticks[1:], labels=[str_to_sci(ytick) for ytick in yticks[1:]])
+
+            axins.set_xticks([])
+            axins.set_xticks([], minor=True)
+            axins.set_xticks([xs[0], xs[-1]], labels=[int(xs[0]), int(xs[-1])])
+
+            # ax.indicate_inset_zoom(axins, edgecolor="black")
+
+    # scientific notation
+    ax.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
     plt.tight_layout()
 
     if sname is None:
@@ -218,7 +264,7 @@ def plot_all_lqr_comparison_experiments(env_arr, log_folder, ylog=False, sname=N
 
 if __name__ == "__main__":
     env_arr = ["simple", "large_simple", "boeing"]
-    root = "/home/jc4/Code/github/online-lqr"
+    root = "/Users/calebju/Code/online-lqr"
     log_folder = os.path.join(root, "logs")
     save_folder = os.path.join(root, "plot")
     sname = None
